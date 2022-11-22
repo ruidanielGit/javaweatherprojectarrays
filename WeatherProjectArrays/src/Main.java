@@ -3,26 +3,41 @@ import java.text.DecimalFormatSymbols;
 import java.util.Scanner;
 
 public class Main {
-    static String dataTest = "Porto; 2022/10/19; 12:00";
+
+    static Scanner sc = new Scanner(System.in);
+    static DecimalFormatSymbols dfs = new DecimalFormatSymbols();
+    static DecimalFormat df = new DecimalFormat("0.00");
 
     public static void main(String[] args) {
 
-        int[][] data = insertTerrainDataInArray();
-        System.out.println(displayDataAreaAndTemp(data));
-        System.out.println(displayAllertsMap(data));
-        String MA = displayAllertsMap(data);
-        String test = "MEMMH" + "\n" + "MHHCE\n" + "HHHHH";
-        printAllertRepport(allertPercentReport(test));
+        //int[][] data = insertTerrainDataInArray();
+        int[][] dataTest = new int[][]{{18, 40, -22, 24, 39}, {19, 35, 38, 55, 45}, {30, 35, 38, 39, 31}};
+        //exercise B
+        System.out.println(displayDataAreaAndTemp(dataTest));
+        //exercise C
+        displayAllertMap(createAllertMap(dataTest));
+        //exercise D
+        int alteration = sc.nextInt();
+        int[][] alteratedData = temperatureAlterationMatrix(dataTest, alteration);
+        System.out.println(printTempAlterationMatrix(alteratedData));
+        //exercise E
+        char[] allertMap = createAllertMap(alteratedData);
+        printAllertRepport(allertPercentReport(createAllertMap(alteratedData)));
+        //exercise F
+        System.out.println(toAllCatastrophicAllerts(alteratedData));
+        //exercise G
+        int[][] altDataPlusN = alteratedDataPlusN(alteratedData, 10);
+        //exercise H
+        catastrophicNorthToSouth(altDataPlusN);
     }
+
 
     /**
      * Insert terrain data into Array
      */
     protected static int[][] insertTerrainDataInArray() {
 
-        Scanner sc = new Scanner(System.in);
-        //String data = sc.nextLine();
-        String data = dataTest;
+        String data = sc.nextLine();
 
         String matrixScale = sc.nextLine();
         String numOfRows = "";
@@ -41,7 +56,7 @@ public class Main {
             count++;
         }
 
-        int temp[][] = new int[Integer.parseInt(numOfRows)][Integer.parseInt(numOfColumns)];
+        int[][] temp = new int[Integer.parseInt(numOfRows)][Integer.parseInt(numOfColumns)];
 
         for (int i = 0; i < Integer.parseInt(numOfRows); i++) {
             for (int j = 0; j < Integer.parseInt(numOfColumns); j++) {
@@ -81,36 +96,80 @@ public class Main {
      * @param data matrix with temperatures for a certain area
      * @return the allert map
      */
-    protected static String displayAllertsMap(int[][] data) {
-        String allerts = "";
+    protected static char[] createAllertMap(int[][] data) {
+        char[] allerts = new char[data.length * data[0].length + (data.length - 1)];
+        int j, k = 0;
 
-        for (int[] row : data) {
-            for (int temp : row) {
-                if (temp < 20) allerts += 'M';
-                else if (temp < 30) allerts += 'H';
-                else if (temp < 40) allerts += 'E';
-                else allerts += 'C';
+        for (int i = 0; i < data.length; i++) {
+            for (j = 0; j < data[0].length; j++) {
+                if (data[i][j] < 20) allerts[k] = 'M';
+                else if (data[i][j] < 30) allerts[k] = 'H';
+                else if (data[i][j] < 40) allerts[k] = 'E';
+                else allerts[k] = 'C';
+                k++;
             }
-            allerts += "\n";
+            if (j == data[0].length && i < data.length - 1) {
+                allerts[k] = '\n';
+                k++;
+            }
         }
         return allerts;
+    }
+
+    protected static void displayAllertMap(char[] allerts) {
+        for (char allert : allerts) {
+            if (allert == 'B') {
+                System.out.println();
+            } else {
+                System.out.print(allert);
+            }
+        }
+        System.out.print("\n");
+    }
+
+    /**
+     * Supports an alteration on the temperature
+     *
+     * @param initialData initial matrix with temperatures for a certain area
+     * @return the alterated data with the new temperatures
+     */
+    protected static int[][] temperatureAlterationMatrix(int[][] initialData, int alteration) {
+        int[][] alteratedData = new int[initialData.length][initialData[0].length];
+
+        for (int i = 0; i < initialData.length; i++) {
+            for (int j = 0; j < initialData[0].length; j++) {
+                alteratedData[i][j] = initialData[i][j] + alteration;
+            }
+        }
+
+        return alteratedData;
+    }
+
+    protected static String printTempAlterationMatrix(int[][] alteratedData) {
+
+        String info = "";
+        info += displayDataAreaAndTemp(alteratedData);
+        info += "\n";
+
+        for (char c : createAllertMap(alteratedData)) {
+            info += c;
+        }
+        return info + "\n";
     }
 
     /**
      * Prints the allert report
      *
      * @param allertPercent allert map with percentages
-     * @return the percentage of each allert
      */
     protected static void printAllertRepport(float[] allertPercent) {
-        DecimalFormatSymbols dfs = new DecimalFormatSymbols();
         dfs.setDecimalSeparator('.');
-        DecimalFormat df = new DecimalFormat("0.00", dfs);
+        df.setDecimalFormatSymbols(dfs);
 
         System.out.println("MODERATE\t\t:\t" + df.format(allertPercent[0]) + "%");
         System.out.println("HIGH\t\t\t:\t" + df.format(allertPercent[1]) + "%");
         System.out.println("EXTREME\t\t\t:\t" + df.format(allertPercent[2]) + "%");
-        System.out.println("CATASTROPHIC\t:\t" + "" + df.format(allertPercent[3]) + "%");
+        System.out.println("CATASTROPHIC\t:\t" + "" + df.format(allertPercent[3]) + "%\n");
     }
 
     /**
@@ -119,10 +178,11 @@ public class Main {
      * @param allerts String representation of the Allerts
      * @return an Array with the percentages of the Allert
      */
-    protected static float[] allertPercentReport(String allerts) {
+    protected static float[] allertPercentReport(char[] allerts) {
         DecimalFormat df = new DecimalFormat();
         df.applyPattern("0.00");
         int[] allertCounter = counterPerAllert(allerts);
+
         float[] allertPercent = new float[4];
         int numAllerts = allertCounter[0] + allertCounter[1] + allertCounter[2] + allertCounter[3];
 
@@ -137,27 +197,77 @@ public class Main {
      * @param allerts String representation of the allertMap
      *                calculates a counter per Allert
      */
-    protected static int[] counterPerAllert(String allerts) {
+    protected static int[] counterPerAllert(char[] allerts) {
         int[] allertCounter = new int[]{0, 0, 0, 0};
 
-        for (char letter : allerts.toCharArray()) {
-            if (letter != '\n') {
-                switch (letter) {
-                    case 'M':
-                        allertCounter[0]++;
-                        break;
-                    case 'H':
-                        allertCounter[1]++;
-                        break;
-                    case 'E':
-                        allertCounter[2]++;
-                        break;
-                    case 'C':
-                        allertCounter[3]++;
-                }
-            }
+        for (char allert : allerts) {
+            if (allert == 'M') allertCounter[0]++;
+            else if (allert == 'H') allertCounter[1]++;
+            else if (allert == 'E') allertCounter[2]++;
+            else if (allert == 'C') allertCounter[3]++;
         }
         return allertCounter;
+    }
+
+    private static String toAllCatastrophicAllerts(int[][] data) {
+
+        int getMin = data[0][0];
+
+        for (int[] row : data) {
+            for (int temp : row) {
+                if (temp < getMin) getMin = temp;
+            }
+        }
+
+        return "To get all terrain on CATASTROPHIC alert, the temperature has\n" + "to rise : " + (40 - getMin) + "ºC\n";
+    }
+
+    protected static int[][] alteratedDataPlusN(int[][] data, int alteration) {
+
+        int[][] tempPlus10 = temperatureAlterationMatrix(data, alteration);
+        int numOfTemps = data.length * data[0].length;
+        dfs.setDecimalSeparator('.');
+        df.setDecimalFormatSymbols(dfs);
+
+        char[] newMap = createAllertMap(tempPlus10);
+
+        float numVariations = countVariationsInTemp(createAllertMap(data), newMap);
+        float toPercent = (numVariations / numOfTemps) * 100;
+
+        displayAllertMap(newMap);
+
+        System.out.println("Alert Levels changes due to temperature variations by " + alteration + "ºC : " + df.format(toPercent) + "%\n");
+
+        return tempPlus10;
+    }
+
+    protected static float countVariationsInTemp(char[] oldMap, char[] newMap) {
+
+        float count = 0;
+
+        for (int i = 0; i < oldMap.length; i++) {
+            if (oldMap[i] != newMap[i]) count++;
+        }
+
+        return count;
+    }
+
+    protected static void catastrophicNorthToSouth(int[][] data) {
+
+        int[][] newData = new int[data.length][data[0].length];
+
+        for (int i = 0; i < data.length - 1; i++) {
+            for (int j = 0; j < data[0].length; j++) {
+                if (data[i][j] >= 40) {
+                    newData[i][j] = data[i][j];
+                    newData[i + 1][j] = 40;
+                } else if (newData[i][j] < 40) {
+                    newData[i][j] = data[i][j];
+                }
+
+            }
+        }
+        displayAllertMap(createAllertMap(newData));
     }
 }
 
