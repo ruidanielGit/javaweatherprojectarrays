@@ -1,5 +1,6 @@
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Main {
@@ -12,6 +13,8 @@ public class Main {
 
         //int[][] data = insertTerrainDataInArray();
         int[][] dataTest = new int[][]{{18, 40, -22, 24, 39}, {19, 35, 38, 55, 45}, {30, 35, 38, 39, 31}};
+        int[][] dataTest2 = new int[][]{{18, 40, -22, 24, 39}, {19, 35, 38, 45, 55}, {30, 35, 38, 39, 31}};
+
         //exercise B
         System.out.println(displayDataAreaAndTemp(dataTest));
         //exercise C
@@ -28,7 +31,11 @@ public class Main {
         //exercise G
         int[][] altDataPlusN = alteratedDataPlusN(alteratedData, 10);
         //exercise H
-        catastrophicNorthToSouth(altDataPlusN);
+        displayAllertMap(createAllertMap(catastrophicNorthToSouth(dataTest)));
+        //exercise I NOT FINISHED
+        System.out.println(idealWaterDrop(dataTest));
+        //exercise J
+        System.out.println(eastmostSafeColumn(catastrophicNtoSandStoN(dataTest)));
     }
 
 
@@ -252,25 +259,116 @@ public class Main {
         return count;
     }
 
-    protected static void catastrophicNorthToSouth(int[][] data) {
+    protected static int[][] catastrophicNorthToSouth(int[][] data) {
 
         int[][] newData = new int[data.length][data[0].length];
+        Arrays.fill(newData[0], 0);
 
-        for (int i = 0; i < data.length - 1; i++) {
+        for (int i = 0; i < data.length; i++) {
             for (int j = 0; j < data[0].length; j++) {
                 if (data[i][j] >= 40) {
                     newData[i][j] = data[i][j];
-                    newData[i + 1][j] = 40;
-                } else if (newData[i][j] < 40) {
-                    newData[i][j] = data[i][j];
-                }
-
+                    if (i + 1 < data.length)
+                        newData[i + 1][j] = data[i][j];
+                } else if (newData[i][j] == 0) newData[i][j] = data[i][j];
             }
         }
-        displayAllertMap(createAllertMap(newData));
+        return newData;
+    }
+
+    protected static int[][] catastrophicSouthToNorth(int[][] data) {
+
+        int[][] newData = new int[data.length][data[0].length];
+
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < data[0].length; j++) {
+                if (data[i][j] >= 40) {
+                    newData[i][j] = data[i][j];
+                    if (i - 1 >= 0)
+                        newData[i - 1][j] = data[i][j];
+                } else if (newData[i][j] == 0) newData[i][j] = data[i][j];
+            }
+
+        }
+        return newData;
+    }
+
+    /**
+     * heliPos is a matrix [3][3] that represents the drop of water
+     * drop water if temperature is above 50ºC
+     * if there is more than 1 temp above 50ºC, the priority is the j value and the smallest i value
+     *
+     * @param data matrix with temperatures to look for a fire, fire if temperature is above 50ºC
+     *             return the coordenates of the water drop
+     */
+    protected static String idealWaterDrop(int data[][]) {
+
+        int cordX = 0;
+        int cordY = 0;
+        int rows = data.length;
+        int columns = data[0].length;
+
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < columns; j++) {
+                if (j + 1 < columns && data[i][j + 1] >= 50) {
+                    if (cordX < i) {
+                        cordX = i;
+                        cordY = j;
+                    }
+                    if (cordX < i && cordY < j) {
+                        cordX = i;
+                        cordY = j;
+                    }
+                }
+            }
+        }
+
+        while (cordX <= 0) {
+            cordX++;
+        }
+        while (cordY + 2 >= columns) {
+            cordY--;
+        }
+
+        displayDataAreaAndTemp(data);
+
+        return "drop water at (" + cordX + "," + cordY + ")\n";
+    }
+
+    protected static int[][] catastrophicNtoSandStoN(int[][] data) {
+        int[][] NtoS = catastrophicNorthToSouth(data);
+        int[][] StoN = catastrophicSouthToNorth(data);
+        int[][] combination = new int[data.length][data[0].length];
+
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < data[0].length; j++) {
+                if (NtoS[i][j] >= 40 || StoN[i][j] >= 40) {
+                    combination[i][j] = 40;
+                } else {
+                    combination[i][j] = data[i][j];
+                }
+            }
+        }
+        return combination;
+    }
+
+    protected static String eastmostSafeColumn(int[][] combination) {
+
+        boolean isSafe = true;
+
+        for (int j = combination[0].length - 1; j >= 0; j--) {
+            for (int i = 0; i < combination.length; i++) {
+                if (combination[i][j] >= 40) {
+                    isSafe = false;
+                    break; //not necessary but most efficient
+                } else isSafe = true;
+            }
+            if (isSafe)
+                return "safe column = " + j;
+        }
+        return "safe column = NONE";
     }
 }
-
 
 
 
