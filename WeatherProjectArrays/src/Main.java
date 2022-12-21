@@ -20,8 +20,8 @@ public class Main {
         //exercise C
         displayAllertMap(createAllertMap(dataTest));
         //exercise D
-        int alteration = sc.nextInt();
-        int[][] alteratedData = temperatureAlterationMatrix(dataTest, alteration);
+        //int alteration = sc.nextInt();
+        int[][] alteratedData = temperatureAlterationMatrix(dataTest, 10); //alteration = 10
         System.out.println(printTempAlterationMatrix(alteratedData));
         //exercise E
         char[] allertMap = createAllertMap(alteratedData);
